@@ -1,0 +1,4 @@
+# Mount the provider and browser settings page in a profile.
+- insert:
+    - id: web-search-router
+      name: dsh-web-search-router
