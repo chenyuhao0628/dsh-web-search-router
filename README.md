@@ -11,6 +11,7 @@ configured search APIs only when more results are needed or a provider fails.
 - Keyless Parallel search as the first route.
 - Optional Tavily, Exa, Brave Search, Serper, and SerpApi fallbacks.
 - Dynamic fallback order balancing estimated free capacity and observed latency.
+- Live Tavily and SerpApi quota refreshes, plus Brave response-header quotas.
 - Early exit as soon as enough unique results have been collected.
 - URL canonicalization, deduplication, and reciprocal rank fusion (RRF).
 - Provider cooldowns after rate-limit, quota, authentication, or transient errors.
@@ -32,6 +33,13 @@ Each request follows this sequence:
 The initial keyed-provider estimates currently favor Tavily, Exa, Brave Search,
 Serper, and SerpApi according to the capacity/latency score. Runtime measurements
 can change that order automatically.
+
+Before entering the keyed fallback chain, the router refreshes Tavily and
+SerpApi account usage when their ten-minute cache has expired. Brave quota is
+learned from the normal search response headers without an extra request. Exa
+and Serper currently use process-local estimates because they do not expose a
+documented public balance endpoint. A provider with a known zero balance is
+skipped until its usage snapshot changes.
 
 Cooldowns are 10 minutes for HTTP 429, 6 hours for quota or credit exhaustion,
 1 hour for authentication failures, and 1 minute for other transient failures.
@@ -64,6 +72,8 @@ For local development, a link dependency also works:
 
 Open DSH Settings and choose **网络搜索**. Each field writes directly to DSH's
 credential service and never reads the stored secret back into the page.
+The same page shows live, response-header, estimated, and cooldown states. Use
+**刷新额度** to force a new Tavily and SerpApi account-usage check.
 
 | Provider | Credential reference | Required |
 | --- | --- | --- |
@@ -76,6 +86,8 @@ credential service and never reads the stored secret back into the page.
 
 API keys are not stored in Cordis configuration or this repository. Do not put
 credentials in `package.json`, commits, issue reports, or screenshots.
+The browser status endpoint receives only normalized quota metadata; third-party
+account payloads and resolved credential values never cross that boundary.
 
 ## Development
 
